@@ -121,14 +121,24 @@ class DashboardScreen extends StatelessWidget {
                   ),
             ).animate().fadeIn(delay: 300.ms),
             const SizedBox(height: 16),
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 1.5,
-              children: [
+            LayoutBuilder(
+              builder: (context, constraints) {
+                // Calculate responsive aspect ratio based on screen size
+                final screenHeight = MediaQuery.of(context).size.height;
+                final isSmallScreen = screenHeight < 700; // iPhone SE, iPhone 8 size
+                final isMediumScreen = screenHeight < 850; // iPhone 14, 15, 16 Pro size
+                
+                // Dynamic aspect ratio: smaller screens need more height
+                final aspectRatio = isSmallScreen ? 1.2 : (isMediumScreen ? 1.35 : 1.5);
+                
+                return GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: aspectRatio,
+                  children: [
                 _QuickActionCard(
                   icon: PhosphorIconsRegular.camera,
                   title: 'Scan Document',
@@ -157,8 +167,10 @@ class DashboardScreen extends StatelessWidget {
                   color: AppColors.infoColor,
                   onTap: () => context.go('/profile'),
                 ).animate().fadeIn(delay: 700.ms).scale(delay: 700.ms),
-              ],
-            ),
+                  ],
+                );
+              },
+            ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2, end: 0),
             const SizedBox(height: 24),
             
             // Recent Documents
@@ -536,39 +548,61 @@ class _StatsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(AppConstants.defaultRadius),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Responsive padding and sizing
+        final isCompact = constraints.maxWidth < 150;
+        final padding = isCompact ? 12.0 : 16.0;
+        final iconSize = isCompact ? 20.0 : 24.0;
+        final spacing = isCompact ? 6.0 : 8.0;
+        
+        return Container(
+          padding: EdgeInsets.all(padding),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(AppConstants.defaultRadius),
+            border: Border.all(color: color.withValues(alpha: 0.2)),
           ),
-          Text(
-            title,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textSecondary,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: color, size: iconSize),
+              SizedBox(height: spacing),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  value,
+                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                        fontSize: isCompact ? 24 : null,
+                      ),
                 ),
+              ),
+              Text(
+                title,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textSecondary,
+                      fontSize: isCompact ? 12 : null,
+                    ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                subtitle,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.textHint,
+                      fontSize: isCompact ? 10 : null,
+                    ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
-          Text(
-            subtitle,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textHint,
-                ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -599,36 +633,62 @@ class _QuickActionCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppConstants.defaultRadius),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(icon, color: color, size: 20),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // Calculate responsive sizes based on available space
+            final isCompact = constraints.maxHeight < 120;
+            final iconSize = isCompact ? 32.0 : 40.0;
+            final iconContainerSize = isCompact ? 18.0 : 20.0;
+            final spacing = isCompact ? 8.0 : 12.0;
+            final horizontalPadding = isCompact ? 12.0 : 16.0;
+            final verticalPadding = isCompact ? 12.0 : 16.0;
+            
+            return Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: horizontalPadding,
+                vertical: verticalPadding,
               ),
-              const SizedBox(height: 12),
-              Text(
-                title,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: iconSize,
+                    height: iconSize,
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-              ),
-              Text(
-                subtitle,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondary,
+                    child: Icon(icon, color: color, size: iconContainerSize),
+                  ),
+                  SizedBox(height: spacing),
+                  Flexible(
+                    child: Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            fontSize: isCompact ? 14 : null,
+                          ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
+                  ),
+                  Flexible(
+                    child: Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.textSecondary,
+                            fontSize: isCompact ? 11 : null,
+                          ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
